@@ -4,11 +4,6 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-from fastapi import FastAPI
-import joblib
-model = joblib.load('knn_model.joblib')
-scaler = joblib.load('Models/scaler.joblib')
-app = FastAPI()
 @app.get("/")
 def root():
  return "Welcome To Tuwaiq Academy"
