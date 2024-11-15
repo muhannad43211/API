@@ -1,6 +1,6 @@
 # Deploy FastAPI on Render
 
-Use this repo as a template to deploy a Python [FastAPI](https://fastapi.tiangolo.com) service on Render.
+Use this repo as a template to deploy a Python [FastAPI](http://127.0.0.1:8000/docs#/) service on Render.
 
 See https://render.com/docs/deploy-fastapi or follow the steps below:
 
