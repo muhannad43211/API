@@ -1,9 +1,8 @@
-from typing import Optional
-
 from fastapi import FastAPI
-
+import joblib
+model = joblib.load('knn_model.joblib')
+scaler = joblib.load('Models/scaler.joblib')
 app = FastAPI()
-
 @app.get("/")
 def root():
  return "Welcome To Tuwaiq Academy"
@@ -56,10 +55,10 @@ def preprocessing(input_features: InputFeatures):
     return scaled_features
 
 
+
 @app.post("/predict")
 async def predict(input_features: InputFeatures):
     data = preprocessing(input_features)
     y_pred = model.predict(data)
     return {"pred": y_pred.tolist()[0]}
    
-
