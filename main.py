@@ -5,6 +5,14 @@ from pydantic import BaseModel
 # Initialize FastAPI app
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows specific domains
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 # Welcome message at the root endpoint
 @app.get("/")
 def root():
@@ -30,7 +38,6 @@ def preprocessing(input_features: InputFeatures):
         'appearance': input_features.appearance,
         'goals': input_features.goals,
         'minutes_played': input_features.minutes_played,
-        'Highest_valuated_price_euro': input_features.Highest_valuated_price_euro,
         'price_category_Premium': input_features.price_category == 'Premium',
         'price_category_Mid': input_features.price_category == 'Mid',
         'price_category_Budget': input_features.price_category == 'Budget'
