@@ -1,20 +1,31 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import joblib
 from pydantic import BaseModel
-
-# Load pre-trained model and scaler
-model = joblib.load('knn_model.joblib')
-scaler = joblib.load('Models/scaler.joblib')
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Define a simple root endpoint that returns a welcome message
-@app.get("/")
-def root():
-    return {"message": "Welcome to Tuwaiq Academy"}
+# Enable CORS for specific origins (you can adjust these as needed)
+origins = [
+    "http://localhost:3000",  # Streamlit (or any frontend app)
+    "https://your-frontend-app.com",
+]
 
-# Define a Pydantic model for input data validation
+# Add the CORS middleware to allow cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows the specified origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
+# Load model and scaler (adjust paths if necessary)
+model = joblib.load('knn_model.joblib')
+scaler = joblib.load('Models/scaler.joblib')
+
+# Define Pydantic model for input data
 class InputFeatures(BaseModel):
     age: int
     appearance: int
@@ -23,8 +34,9 @@ class InputFeatures(BaseModel):
     Highest_valuated_price_euro: float
     price_category: str
 
-def preprocessing(input_features: InputFeatures):
-    # Create a feature dictionary based on the input data
+# Prediction endpoint
+@app.post("/predict")
+async def get_prediction(input_features: InputFeatures):
     dict_f = {
         'age': input_features.age,
         'appearance': input_features.appearance,
@@ -36,32 +48,10 @@ def preprocessing(input_features: InputFeatures):
         'price_category_Budget': input_features.price_category == 'Budget'
     }
 
-    # Convert dictionary values to a list in the correct order
     features_list = [dict_f[key] for key in sorted(dict_f)]
-    
-    # Return the list directly without converting to numpy array
-    return features_list
 
-@app.get("/predict")
-def get_prediction(input_features: InputFeatures):
-    # Preprocess and scale input features
-    data = preprocessing(input_features)
-    scaled_data = scaler.transform([data])  # scale expects a 2D list, so wrap data in another list
-
-    # Make a prediction using the pre-trained model
+    # Scale features and make prediction
+    scaled_data = scaler.transform([features_list])
     y_pred = model.predict(scaled_data)
 
-    # Return prediction result as a JSON response
-    return {"pred": y_pred.tolist()[0]}
-
-@app.post("/predict")
-async def post_prediction(input_features: InputFeatures):
-    # Preprocess and scale input features
-    data = preprocessing(input_features)
-    scaled_data = scaler.transform([data])  # scale expects a 2D list, so wrap data in another list
-
-    # Make a prediction using the pre-trained model
-    y_pred = model.predict(scaled_data)
-
-    # Return prediction result as a JSON response
     return {"pred": y_pred.tolist()[0]}
