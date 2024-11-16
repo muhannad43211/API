@@ -1,57 +1,52 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import streamlit as st
 import joblib
-from pydantic import BaseModel
+import numpy as np
 
-# Initialize FastAPI app
-app = FastAPI()
-
-# Enable CORS for specific origins (you can adjust these as needed)
-origins = [
-    "http://localhost:3000",  # Streamlit (or any frontend app)
-    "https://your-frontend-app.com",
-]
-
-# Add the CORS middleware to allow cross-origin requests
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,  # Allows the specified origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allow all headers
-)
-
-# Load model and scaler (adjust paths if necessary)
+# Load pre-trained model and scaler
 model = joblib.load('knn_model.joblib')
 scaler = joblib.load('Models/scaler.joblib')
 
-# Define Pydantic model for input data
-class InputFeatures(BaseModel):
-    age: int
-    appearance: int
-    goals: int
-    minutes_played: int
-    Highest_valuated_price_euro: float
-    price_category: str
-
-# Prediction endpoint
-@app.post("/predict")
-async def get_prediction(input_features: InputFeatures):
+# Function for preprocessing input features
+def preprocessing(age, appearance, goals, minutes_played, highest_valuated_price_euro, price_category):
+    # Create a feature dictionary based on the input data
     dict_f = {
-        'age': input_features.age,
-        'appearance': input_features.appearance,
-        'goals': input_features.goals,
-        'minutes_played': input_features.minutes_played,
-        'Highest_valuated_price_euro': input_features.Highest_valuated_price_euro,
-        'price_category_Premium': input_features.price_category == 'Premium',
-        'price_category_Mid': input_features.price_category == 'Mid',
-        'price_category_Budget': input_features.price_category == 'Budget'
+        'age': age,
+        'appearance': appearance,
+        'goals': goals,
+        'minutes_played': minutes_played,
+        'Highest_valuated_price_euro': highest_valuated_price_euro,
+        'price_category_Premium': price_category == 'Premium',
+        'price_category_Mid': price_category == 'Mid',
+        'price_category_Budget': price_category == 'Budget'
     }
 
+    # Convert dictionary values to a list in the correct order
     features_list = [dict_f[key] for key in sorted(dict_f)]
+    
+    return features_list
 
-    # Scale features and make prediction
-    scaled_data = scaler.transform([features_list])
+# Streamlit UI
+st.title("Football Player Prediction Model")
+st.write("Welcome to the prediction app! Enter the details below to make a prediction.")
+
+# Input fields for the user
+age = st.number_input("Age", min_value=18, max_value=40, step=1)
+appearance = st.number_input("Appearance", min_value=0, max_value=500, step=1)
+goals = st.number_input("Goals", min_value=0, max_value=300, step=1)
+minutes_played = st.number_input("Minutes Played", min_value=0, max_value=50000, step=1)
+highest_valuated_price_euro = st.number_input("Highest Valuated Price (Euro)", min_value=0.0, step=0.1)
+price_category = st.selectbox("Price Category", options=["Premium", "Mid", "Budget"])
+
+# When the user clicks on the "Predict" button
+if st.button("Predict"):
+    # Preprocess the input data
+    data = preprocessing(age, appearance, goals, minutes_played, highest_valuated_price_euro, price_category)
+
+    # Scale the input data
+    scaled_data = scaler.transform([data])
+
+    # Make the prediction using the pre-trained model
     y_pred = model.predict(scaled_data)
 
-    return {"pred": y_pred.tolist()[0]}
+    # Display the prediction result
+    st.write(f"Prediction: {y_pred[0]}")
