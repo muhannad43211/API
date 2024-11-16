@@ -9,6 +9,11 @@ scaler = joblib.load('Models/scaler.joblib')
 # Initialize FastAPI app
 app = FastAPI()
 
+# Define a simple root endpoint that returns a welcome message
+@app.get("/")
+def root():
+    return {"message": "Welcome to Tuwaiq Academy"}
+
 # Define a Pydantic model for input data validation
 class InputFeatures(BaseModel):
     age: int
@@ -33,15 +38,15 @@ def preprocessing(input_features: InputFeatures):
 
     # Convert dictionary values to a list in the correct order
     features_list = [dict_f[key] for key in sorted(dict_f)]
-
-    # Return the features as a numpy array, ready for scaling
-    return np.array(features_list).reshape(1, -1)
+    
+    # Return the list directly without converting to numpy array
+    return features_list
 
 @app.get("/predict")
 def get_prediction(input_features: InputFeatures):
     # Preprocess and scale input features
     data = preprocessing(input_features)
-    scaled_data = scaler.transform(data)
+    scaled_data = scaler.transform([data])  # scale expects a 2D list, so wrap data in another list
 
     # Make a prediction using the pre-trained model
     y_pred = model.predict(scaled_data)
@@ -53,7 +58,7 @@ def get_prediction(input_features: InputFeatures):
 async def post_prediction(input_features: InputFeatures):
     # Preprocess and scale input features
     data = preprocessing(input_features)
-    scaled_data = scaler.transform(data)
+    scaled_data = scaler.transform([data])  # scale expects a 2D list, so wrap data in another list
 
     # Make a prediction using the pre-trained model
     y_pred = model.predict(scaled_data)
