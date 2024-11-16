@@ -1,1 +1,22 @@
 fastapi[all]
+
+# General libraries for ignoring warnings and numerical operations
+warnings
+pandas
+numpy
+nbformat
+matplotlib
+seaborn
+plotly
+scikit-learn
+
+# For the FastAPI app and model-related tasks
+fastapi
+joblib
+pydantic
+
+# To run FastAPI with an ASGI server (e.g. Uvicorn for development)
+uvicorn
+
+# Optional: If you plan to use Jupyter notebooks, add this as well
+ipython

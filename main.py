@@ -1,64 +1,62 @@
 from fastapi import FastAPI
 import joblib
+from pydantic import BaseModel
+
+# Load pre-trained model and scaler
 model = joblib.load('knn_model.joblib')
 scaler = joblib.load('Models/scaler.joblib')
+
+# Initialize FastAPI app
 app = FastAPI()
-@app.get("/")
-def root():
- return "Welcome To Tuwaiq Academy"
 
-from pydantic import BaseModel
- # Define a Pydantic model for input data validation
+# Define a Pydantic model for input data validation
 class InputFeatures(BaseModel):
-    Year: int
-    Engine_Size: float
-    Mileage: float
-    Type: str
-    Make: str
-    Options: str
+    age: int
+    appearance: int
+    goals: int
+    minutes_played: int
+    Highest_valuated_price_euro: float
+    price_category: str
 
 def preprocessing(input_features: InputFeatures):
+    # Create a feature dictionary based on the input data
     dict_f = {
-        'Year': input_features.Year,
-        'Engine_Size': input_features.Engine_Size, 
-        'Mileage': input_features.Mileage,       
-        'Type_Accent': input_features.Type == 'Accent',
-        'Type_Land Cruiser': input_features.Type == 'LandCruiser',
-        'Make_Hyundai': input_features.Make == 'Hyundai',
-        'Make_Mercedes': input_features.Make == 'Mercedes',
-        'Options_Full': input_features.Options == 'Full',
-        'Options_Standard': input_features.Options == 'Standard'
-        }
-    return dict_f
-@app.get("/predict")
-def predict(input_features: InputFeatures):
-   return preprocessing(input_features)
+        'age': input_features.age,
+        'appearance': input_features.appearance,
+        'goals': input_features.goals,
+        'minutes_played': input_features.minutes_played,
+        'Highest_valuated_price_euro': input_features.Highest_valuated_price_euro,
+        'price_category_Premium': input_features.price_category == 'Premium',
+        'price_category_Mid': input_features.price_category == 'Mid',
+        'price_category_Budget': input_features.price_category == 'Budget'
+    }
 
-def preprocessing(input_features: InputFeatures):
-    dict_f = {
-            'Year': input_features.Year,
-            'Engine_Size': input_features.Engine_Size, 
-            'Mileage': input_features.Mileage, 
-            'Type_Accent': input_features.Type == 'Accent',
-            'Type_Land Cruiser': input_features.Type == 'LandCruiser',
-            'Make_Hyundai': input_features.Make == 'Hyundai',
-            'Make_Mercedes': input_features.Make == 'Mercedes',
-            'Options_Full': input_features.Options == 'Full',
-            'Options_Standard': input_features.Options == 'Standard'
-        }
     # Convert dictionary values to a list in the correct order
     features_list = [dict_f[key] for key in sorted(dict_f)]
-    
-    # Scale the input features
-    scaled_features = scaler.transform([list(dict_f.values
-())])
-    return scaled_features
 
+    # Return the features as a numpy array, ready for scaling
+    return np.array(features_list).reshape(1, -1)
 
+@app.get("/predict")
+def get_prediction(input_features: InputFeatures):
+    # Preprocess and scale input features
+    data = preprocessing(input_features)
+    scaled_data = scaler.transform(data)
+
+    # Make a prediction using the pre-trained model
+    y_pred = model.predict(scaled_data)
+
+    # Return prediction result as a JSON response
+    return {"pred": y_pred.tolist()[0]}
 
 @app.post("/predict")
-async def predict(input_features: InputFeatures):
+async def post_prediction(input_features: InputFeatures):
+    # Preprocess and scale input features
     data = preprocessing(input_features)
-    y_pred = model.predict(data)
+    scaled_data = scaler.transform(data)
+
+    # Make a prediction using the pre-trained model
+    y_pred = model.predict(scaled_data)
+
+    # Return prediction result as a JSON response
     return {"pred": y_pred.tolist()[0]}
-   
