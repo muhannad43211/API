@@ -3,4 +3,4 @@
  [onrender](https://api-nx09.onrender.com/docs)
  
  
- [Streamlit](http://localhost:8501/)
+ [Streamlit](https://api-nx09.onrender.com)
